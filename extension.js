@@ -13,57 +13,81 @@
  *along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 (function(ext) {
+	ext.addOn = function(message) {
+	var myKeyVals = { "gbroadcast" :  "AddOn" + message };
 
-  ext.latestUserTweet = function(name, callback) {
+	var saveData = $.ajax({
+		  type: 'POST',
+		  url: "http://192.168.0.18:8181?action=saveData",
+                    cache:false,
+		  data: myKeyVals,
+		  dataType: "json",
+		  success: function(resultData) { console.log("OK") }
+		});
+	saveData.error(function() { console.log("who knows"); });
+	  };    
+    
+	ext.pinWrite = function(pin, val) {
+        $.ajaxSetup({
+          cache:false
+        });
+	var myKeyVals = { "gBroadcast" :  "pin" + pin + val };
+
+	var saveData = $.ajax({
+		  type: 'POST',
+		  url: "http://127.0.0.1:8181?action=saveData",
+                    cache:false,
+		  data: myKeyVals,
+		  dataType: "json",
+		  success: function(resultData) { console.log("OK") }
+		});
+	saveData.error(function() { console.log("who knows"); });
+	  };
+
+  ext.pinRead = function(pin, callback) {
+      var myKeyVals = { "readpin" :  pin };
+
+	var saveData = $.ajax({
+		  type: 'POST',
+		  url: "http://192.168.0.18:8181?action=saveData",
+
+		  data: myKeyVals,
+		  dataType: "json",
+		  success: function(resultData) { console.log("OK") }
+		});
+	saveData.error(function() { console.log("who knows"); });
+	  
+      
     $.ajax({
       method: "GET",
-      url: "http://scratchx-twitter.herokuapp.com/1.1/statuses/user_timeline.json",
-      data: {
-        screen_name: name,
-        count: 1
-      },
-      dataType: "json",
-      success: function(data) {
-        if (data.length > 0) {
-          callback(data[0].text);
-          return;
-        }
-        callback("No tweets found");
-      },
-      error: function(xhr, textStatus, error) {
-        console.log(error);
-        callback();
-      }
-    });
+      url: "http://192.168.0.18/pin" + pin + ".json",
+		dataType: "json",
+
+		  success: function(data) {
+			  callback(data.val);
+			  return;
+		  },
+		  error: function(xhr, textStatus, error) {
+			console.log(error);
+			callback("eRRor:" + error);
+		  }
+		});
   };
 
-  ext.getTopTweet = function(sort, str, callback) {
-    //If searching popluar, remove # and @ symbols from query
-    if (sort == "popular") {
-      str = str.replace('#','').replace('@','');
-    }
-    $.ajax({
-      method: "GET",
-      url: "http://scratchx-twitter.herokuapp.com/1.1/search/tweets.json",
-      data: {
-        q: encodeURIComponent(str),
-        result_type: sort,
-        count: 1
-      },
-      dataType: "json",
-      success: function(data) {
-        if (data.statuses.length > 0) {
-          callback(data.statuses[0].text);
-          return;
-        }
-        callback("No tweets found");
-      },
-      error: function(xhr, textStatus, error) {
-        console.log(error);
-        callback();
-      }
-    });
-  };
+	ext.gBroadcast = function(message) {
+
+	var myKeyVals = { "gbroadcast" :  message };
+
+	var saveData = $.ajax({
+		  type: 'POST',
+		  url: "http://192.168.0.18:8181?action=saveData",
+                    cache:false,
+		  data: myKeyVals,
+		  dataType: "json",
+		  success: function(resultData) { console.log("OK") }
+		});
+	saveData.error(function() { console.log("who knows"); });
+	  };
 
   ext._getStatus = function() {
     return { status:2, msg:'Ready' };
@@ -71,15 +95,18 @@
 
   var descriptor = {
     blocks: [
-      ['R', 'latest tweet from @%s', 'latestUserTweet', 'scratch'],
-      ['R', 'most %m.sort tweet containing %s', 'getTopTweet', 'recent', '#scratch'],
+	  [' ', 'set AddOn to %s', 'addOn', ''],    
+      ['R', 'pin %s', 'pinRead', '36'],
+      [' ', 'broadcast to GPIO %s', 'gBroadcast', ''],
+	  [' ', 'set pin %m.pins to %m.onoff', 'pinWrite', '11', 'On'],
     ],
     menus: {
-      sort: ["popular", "recent"]
+      onoff: ["On", "Off","1","0","High","Low"],
+      pins: ["3","5","7","8","10","11","12","13","15","16","18","19","21","22","23","24","26","29","31","32","33","35","36","37","38","40"]
     },
     url: 'https://dev.twitter.com/overview/documentation'
   };
 
-  ScratchExtensions.register('Twitter', descriptor, ext);
+  ScratchExtensions.register('s2gpio', descriptor, ext);
 
 })({});
